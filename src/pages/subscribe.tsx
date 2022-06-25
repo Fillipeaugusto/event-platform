@@ -4,20 +4,53 @@ import { useNavigate } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { useCreateSubscriberMutation } from '../graphql/generated';
 import BgImageMockup from '/src/assets/code-mockup.png';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import toast from 'react-hot-toast';
+
+type FormProps = {
+	name: string;
+	email: string;
+};
+
+const schema = yup.object({
+	name: yup.string().required('Nome é obrigatório'),
+	email: yup.string().email().required('E-mail é obrigatório'),
+});
+
 export function Subscribe() {
 	const navigate = useNavigate();
-	const [name, setName] = useState('');
-	const [email, setEmail] = useState('');
+
 	const [createSubscriber, { loading }] = useCreateSubscriberMutation();
 
-	async function handleSubscribe(event: FormEvent) {
-		event.preventDefault();
-		createSubscriber({
-			variables: {
-				name,
-				email,
-			},
-		});
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<FormProps>({
+		resolver: yupResolver(schema),
+	});
+
+	async function handleSubscribe(data: FormProps) {
+		const notificationToast = toast.loading('Enviando seus dados');
+		await new Promise((resolve) => setTimeout(resolve, 2000));
+		try {
+			createSubscriber({
+				variables: {
+					name: data.name,
+					email: data.email,
+				},
+			});
+			toast.success('Conta criada com sucesso', {
+				id: notificationToast,
+			});
+		} catch (e) {
+			console.log(e);
+			toast.error('Não foi possivel criar a sua conta', {
+				id: notificationToast,
+			});
+		}
 		navigate('/event');
 	}
 
@@ -38,21 +71,27 @@ export function Subscribe() {
 				</div>
 				<div className="p-8 bg-gray-700 border border-gray-500 rounded">
 					<strong className="text-2xl mb-6 block">Inscreva-se gratuitamente</strong>
-					<form className="flex flex-col gap-2 w-full" onSubmit={handleSubscribe}>
+					<form
+						className="flex flex-col gap-2 w-full"
+						onSubmit={handleSubmit(handleSubscribe)}
+					>
 						<input
 							className="bg-gray-900 rounded px-5 h-14"
 							type="text"
 							placeholder="Seu nome completo"
-							onChange={(e) => setName(e.target.value)}
-							value={name}
+							// onChange={(e) => setName(e.target.value)}
+							{...register('name')}
 						/>
+						{errors.name && <span>{errors.name?.message}</span>}
 						<input
-							className="bg-gray-900 rounded px-5 h-14"
+							className="bg-gray-900 rounded px-5 h-14 "
 							type="email"
 							placeholder="Digite seu e-mail"
-							onChange={(e) => setEmail(e.target.value)}
-							value={email}
+							// onChange={(e) => setEmail(e.target.value)}
+							// value={email}
+							{...register('email')}
 						/>
+						{errors.email && <span>{errors.email?.message}</span>}
 						<button
 							type="submit"
 							disabled={loading}
