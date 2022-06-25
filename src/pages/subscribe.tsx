@@ -27,7 +27,7 @@ export function Subscribe() {
 	const {
 		register,
 		handleSubmit,
-		formState: { errors },
+		formState: { errors, isSubmitting },
 	} = useForm<FormProps>({
 		resolver: yupResolver(schema),
 	});
@@ -94,7 +94,7 @@ export function Subscribe() {
 						{errors.email && <span>{errors.email?.message}</span>}
 						<button
 							type="submit"
-							disabled={loading}
+							disabled={isSubmitting}
 							className="mt-4 bg-green-500 uppercase py-4 rounded font-bold text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
 						>
 							Garantir minha vaga
